@@ -1,0 +1,49 @@
+# Descripción del proyecto de Xcode.
+#
+# El .xcodeproj NO se versiona: se genera desde este archivo con
+#   xcodegen generate
+# Así el proyecto es legible, no da conflictos de merge, y se puede editar
+# desde una máquina que ni siquiera tiene Xcode.
+
+name: PatitasiOS
+
+options:
+  bundleIdPrefix: mx.gabrielblanchet
+  deploymentTarget:
+    iOS: "18.0"
+  createIntermediateGroups: true
+
+targets:
+  PatitasiOS:
+    type: application
+    platform: iOS
+    sources: [Sources]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: mx.gabrielblanchet.patitas
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Patitas
+        SWIFT_VERSION: "6.0"
+        SWIFT_STRICT_CONCURRENCY: complete
+        TARGETED_DEVICE_FAMILY: "1,2"
+
+  PatitasiOSTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [Tests]
+    dependencies:
+      - target: PatitasiOS
+    settings:
+      base:
+        SWIFT_VERSION: "6.0"
+        GENERATE_INFOPLIST_FILE: YES
+
+schemes:
+  PatitasiOS:
+    build:
+      targets:
+        PatitasiOS: all
+        PatitasiOSTests: [test]
+    test:
+      targets: [PatitasiOSTests]
