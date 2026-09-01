@@ -1,0 +1,43 @@
+# Configuracion de SwiftLint para la demostracion del capitulo 36.
+#
+# La idea de este archivo es que sea LEGIBLE: cada bloque dice que hace y por
+# que. Un .swiftlint.yml sin comentarios se convierte en folclore de equipo.
+
+# Que se revisa y que no.
+included:
+  - Antes.swift
+  - Despues.swift
+
+excluded:
+  - .build
+  - Pods
+
+# Reglas que no vienen encendidas de fabrica y si queremos.
+opt_in_rules:
+  - empty_count            # `xs.count == 0` en vez de `xs.isEmpty`
+  - first_where            # `.filter { }.first` en vez de `.first(where:)`
+  - force_unwrapping       # el `!` que tumba la app
+  - explicit_init          # `.init(...)` redundante
+  - closure_spacing
+
+# Reglas que apagamos, con su motivo. Apagar sin motivo escrito no vale.
+disabled_rules:
+  - todo                   # los TODO se rastrean en el gestor de tareas, no aqui
+
+# Umbrales. Los de fabrica son razonables; estos son los del libro.
+line_length:
+  warning: 120
+  error: 200
+  ignores_comments: true
+
+identifier_name:
+  min_length:
+    warning: 3
+  excluded: [id, x, y]     # nombres cortos que si son claros
+
+type_body_length:
+  warning: 250
+  error: 400
+
+# Formato de la salida. "xcode" es el que entienden Xcode y GitHub Actions.
+reporter: "xcode"

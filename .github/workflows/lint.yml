@@ -1,0 +1,61 @@
+# Revisa el estilo del codigo con SwiftLint.
+#
+# Va en un workflow aparte del de iOS a proposito: tarda un minuto, no necesita
+# simulador y por eso puede dar su veredicto mucho antes que la compilacion.
+# En un equipo real, esta es la comprobacion que la gente ve primero en su PR.
+#
+# El job hace dos cosas distintas:
+#   1. Una DEMOSTRACION sobre lint-demo/, que nunca falla. Su unico proposito
+#      es producir la salida real que se cita en el capitulo 36 del libro.
+#   2. Una PUERTA DE CALIDAD sobre el codigo de verdad, que si falla rompe el
+#      build. Sin esta segunda parte, un linter es decoracion.
+
+name: Estilo
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  swiftlint:
+    runs-on: macos-26
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar SwiftLint
+        run: brew install swiftlint
+
+      - name: Dejar constancia de la version
+        run: swiftlint version
+
+      # ---------------------------------------------------- 1. Demostracion
+
+      - name: Antes - lo que encuentra en un archivo mal escrito
+        working-directory: lint-demo
+        run: |
+          cp Antes.swift Despues.swift
+          swiftlint lint --no-cache Antes.swift || true
+
+      - name: Corregir automaticamente lo que se puede
+        working-directory: lint-demo
+        run: swiftlint --fix --no-cache Despues.swift
+
+      - name: Despues - lo que queda para el humano
+        working-directory: lint-demo
+        run: swiftlint lint --no-cache Despues.swift || true
+
+      - name: Que cambio exactamente
+        working-directory: lint-demo
+        run: diff -u Antes.swift Despues.swift || true
+
+      # ------------------------------------------------ 2. Puerta de calidad
+
+      # Sin --strict, los avisos no rompen nada y todo el mundo los ignora.
+      # Con --strict, un aviso es un error y el PR no se puede fusionar.
+      - name: Puerta de calidad sobre el codigo real
+        run: |
+          swiftlint lint --strict --no-cache \
+            swift-cli/Sources swift-cli/Tests PatitasiOS/Sources PatitasiOS/Tests
