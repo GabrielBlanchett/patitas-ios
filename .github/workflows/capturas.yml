@@ -124,6 +124,9 @@ jobs:
           demo 16-sistema.png           sistema
           demo 17-rendimiento.png       rendimiento
 
+          demo 20-uikit.png             uikit
+          demo 21-interop.png           interop
+
           # La pantalla adaptativa, en las dos condiciones que la justifican.
           demo 18-adaptativo-normal.png adaptativo
           xcrun simctl ui "$SIMULADOR" content_size accessibility-extra-extra-extra-large

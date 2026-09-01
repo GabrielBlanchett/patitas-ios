@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// Qué pantalla se muestra al arrancar.
 ///
@@ -20,6 +21,8 @@ enum Demo: String, CaseIterable, Sendable {
     case adaptativo
     case sistema
     case rendimiento
+    case uikit
+    case interop
 
     /// La que pidió el argumento de lanzamiento, o el catálogo si no hay.
     static var seleccionada: Demo {
@@ -56,6 +59,20 @@ struct RaizDemo: View {
             DemoSistemaView()
         case .rendimiento:
             DemoRendimientoView()
+        case .uikit:
+            EnvoltorioUIKit().ignoresSafeArea()
+        case .interop:
+            DemoInteropView()
         }
     }
+}
+
+/// Deja ver el controlador de UIKit dentro del enrutador de SwiftUI, que es de
+/// por sí una demostración del capítulo 69.
+struct EnvoltorioUIKit: UIViewControllerRepresentable {
+    func makeUIViewController(context: Context) -> DemoUIKitController {
+        DemoUIKitController()
+    }
+
+    func updateUIViewController(_ controlador: DemoUIKitController, context: Context) { }
 }
