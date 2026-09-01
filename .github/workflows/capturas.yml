@@ -74,12 +74,30 @@ jobs:
           set -eu
           APP=mx.gabrielblanchet.patitas
 
+          # Dispara y COMPRUEBA. Una captura tomada mientras todavia se ve la
+          # pantalla de arranque sale en blanco y no falla: hay que detectarla.
+          # El criterio es el tamano del PNG. Medido en este mismo runner: una
+          # pantalla en blanco pesa 65-76 KB y cualquier pantalla con contenido
+          # pasa de 110 KB. El umbral de 95 KB los separa con holgura.
           disparar() {   # $1 archivo, resto: argumentos de lanzamiento
             local salida="$1"; shift
-            xcrun simctl launch "$SIMULADOR" "$APP" "$@" >/dev/null
-            sleep 8
-            xcrun simctl io "$SIMULADOR" screenshot "capturas/$salida"
-            xcrun simctl terminate "$SIMULADOR" "$APP" >/dev/null 2>&1 || true
+            local intento=1
+            while [ $intento -le 4 ]; do
+              xcrun simctl launch "$SIMULADOR" "$APP" "$@" >/dev/null
+              sleep $((4 + intento * 3))
+              xcrun simctl io "$SIMULADOR" screenshot "capturas/$salida" >/dev/null 2>&1
+              xcrun simctl terminate "$SIMULADOR" "$APP" >/dev/null 2>&1 || true
+              local peso
+              peso=$(stat -f%z "capturas/$salida" 2>/dev/null || echo 0)
+              if [ "$peso" -gt 95000 ]; then
+                echo "$salida: $peso bytes (intento $intento)"
+                return 0
+              fi
+              echo "$salida: $peso bytes, parece la pantalla de arranque; reintento"
+              intento=$((intento + 1))
+            done
+            echo "ERROR: $salida sigue saliendo en blanco tras 4 intentos"
+            return 1
           }
 
           xcrun simctl ui "$SIMULADOR" appearance light
@@ -100,20 +118,27 @@ jobs:
           set -eu
           APP=mx.gabrielblanchet.patitas
 
+          # Mismo criterio que en el paso anterior: se comprueba y se reintenta.
           demo() {   # $1 archivo, $2 valor de -demo, resto: extras
             local salida="$1"; local cual="$2"; shift 2
-            xcrun simctl launch "$SIMULADOR" "$APP" -demo "$cual" "$@" >/dev/null
-            sleep 8
-            xcrun simctl io "$SIMULADOR" screenshot "capturas/$salida"
-            xcrun simctl terminate "$SIMULADOR" "$APP" >/dev/null 2>&1 || true
+            local intento=1
+            while [ $intento -le 4 ]; do
+              xcrun simctl launch "$SIMULADOR" "$APP" -demo "$cual" "$@" >/dev/null
+              sleep $((4 + intento * 3))
+              xcrun simctl io "$SIMULADOR" screenshot "capturas/$salida" >/dev/null 2>&1
+              xcrun simctl terminate "$SIMULADOR" "$APP" >/dev/null 2>&1 || true
+              local peso
+              peso=$(stat -f%z "capturas/$salida" 2>/dev/null || echo 0)
+              if [ "$peso" -gt 95000 ]; then
+                echo "$salida: $peso bytes (intento $intento)"
+                return 0
+              fi
+              echo "$salida: $peso bytes, parece la pantalla de arranque; reintento"
+              intento=$((intento + 1))
+            done
+            echo "ERROR: $salida sigue saliendo en blanco tras 4 intentos"
+            return 1
           }
-
-          # Lanzamiento de calentamiento: la primera apertura tras un cambio de
-          # paso tarda mas y la captura salio en blanco (era la pantalla de
-          # arranque, todavia sin dibujar). Se descarta a proposito.
-          xcrun simctl launch "$SIMULADOR" "$APP" -demo layout >/dev/null
-          sleep 8
-          xcrun simctl terminate "$SIMULADOR" "$APP" >/dev/null 2>&1 || true
 
           demo 10-layout.png            layout
           demo 11-estado.png            estado
