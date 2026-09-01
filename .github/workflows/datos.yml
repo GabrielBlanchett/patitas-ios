@@ -38,3 +38,10 @@ jobs:
       - name: Probar
         working-directory: swift-datos
         run: swift test
+
+      # No falla el build a proposito: es una sonda. En un runner el proceso
+      # no esta firmado y el llavero puede negarse; lo que interesa es saber
+      # con que codigo exacto, para poder declararlo en el anexo A5.
+      - name: Sonda del llavero
+        working-directory: swift-datos
+        run: swift run probar-llavero || true

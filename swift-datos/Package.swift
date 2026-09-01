@@ -20,6 +20,7 @@ let package = Package(
             name: "Datos",
             dependencies: [.product(name: "GRDB", package: "GRDB.swift")]
         ),
+        .executableTarget(name: "probar-llavero", dependencies: ["Datos"]),
         .testTarget(name: "DatosTests", dependencies: ["Datos"]),
     ],
     swiftLanguageModes: [.v6]
