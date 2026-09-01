@@ -18,3 +18,10 @@ capturas-ci/
 
 # Secretos
 .env
+
+# Binarios que deja swiftc al compilar un archivo suelto
+*.exe
+*.lib
+*.exp
+*.pdb
+*.obj
