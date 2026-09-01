@@ -80,8 +80,12 @@ void nulos() {
   print('largo con ?. = ${nombre?.length}');
 
   // `late` es la valvula de escape de Dart: promete que se asignara antes
-  // de leerse. Si no, revienta en tiempo de ejecucion.
+  // de leerse. El analisis de flujo atrapa los casos obvios EN COMPILACION;
+  // los que dependen de una condicion, no, y esos revientan al correr.
   late String tardio;
+  if (DateTime.now().year < 2000) {
+    tardio = 'nunca pasa';
+  }
   try {
     print(tardio);
   } catch (e) {
