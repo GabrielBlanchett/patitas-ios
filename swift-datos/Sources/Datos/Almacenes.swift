@@ -8,7 +8,12 @@ import Security
 /// `UserDefaults` acepta cualquier cosa bajo cualquier cadena, y ahí empiezan
 /// los problemas: una clave mal escrita no falla, simplemente devuelve nil
 /// para siempre. Concentrar las claves en un solo sitio lo evita.
-public struct Preferencias: Sendable {
+///
+/// El `@unchecked Sendable` es necesario y está justificado: Apple documenta
+/// `UserDefaults` como seguro entre hilos, pero la clase no está marcada
+/// `Sendable` porque viene de Objective-C. Sin la anotación, Swift 6 rechaza
+/// guardarla dentro de un `struct` que sí lo es.
+public struct Preferencias: @unchecked Sendable {
     private let defaults: UserDefaults
 
     /// Las claves, en un solo lugar y escritas una sola vez.
