@@ -1,0 +1,117 @@
+# Le pregunta al runner todo lo que la Parte VIII necesita saber de Xcode.
+#
+# Es un workflow de reconocimiento: no compila nada de la app, solo captura la
+# salida real de las herramientas de linea de comandos de Xcode para que los
+# capitulos 49 a 54 citen datos y no suposiciones. Se lanza a mano.
+#
+# Ninguno de los pasos rompe el build a proposito: lo que interesa es la
+# salida, incluida la de los que fallan.
+
+name: Reconocimiento Xcode
+
+on:
+  workflow_dispatch:
+
+jobs:
+  reconocer:
+    runs-on: macos-26
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Seleccionar Xcode
+        run: sudo xcode-select -s /Applications/Xcode_26.6.app
+
+      # ---------------------------------------------------- Cap. 49: Xcode
+
+      - name: Version y rutas
+        run: |
+          xcodebuild -version
+          xcode-select -p
+          xcrun --show-sdk-path --sdk iphonesimulator
+          xcrun --show-sdk-version --sdk iphoneos
+
+      - name: Esquemas y objetivos del proyecto
+        working-directory: PatitasiOS
+        run: |
+          brew install xcodegen >/dev/null 2>&1 || true
+          xcodegen generate
+          xcodebuild -list -project PatitasiOS.xcodeproj
+
+      - name: Ajustes de compilacion que de verdad importan
+        working-directory: PatitasiOS
+        run: |
+          xcodebuild -showBuildSettings \
+            -project PatitasiOS.xcodeproj -scheme PatitasiOS \
+            2>/dev/null \
+            | grep -E "^ +(SWIFT_VERSION|SWIFT_OPTIMIZATION_LEVEL|IPHONEOS_DEPLOYMENT_TARGET|PRODUCT_BUNDLE_IDENTIFIER|CONFIGURATION|ONLY_ACTIVE_ARCH|ENABLE_TESTABILITY|SWIFT_STRICT_CONCURRENCY|DEBUG_INFORMATION_FORMAT) =" \
+            | sort || true
+
+      # ----------------------------------------------- Cap. 50: simulador
+
+      - name: Que dispositivos hay
+        run: |
+          xcrun simctl list runtimes
+          echo "--- tipos de dispositivo (primeros 15) ---"
+          xcrun simctl list devicetypes | head -15
+
+      - name: Cosas que simctl puede hacer y casi nadie usa
+        run: |
+          echo "--- ayuda de simctl ---"
+          xcrun simctl help 2>&1 | head -40
+          echo "--- status_bar ---"
+          xcrun simctl status_bar 2>&1 | head -20
+          echo "--- ui ---"
+          xcrun simctl ui 2>&1 | head -20
+
+      # -------------------------------------------------- Cap. 51: firma
+
+      - name: Identidades de firma disponibles
+        run: |
+          security find-identity -v -p codesigning 2>&1 || true
+          echo "--- notarytool ---"
+          xcrun notarytool --help 2>&1 | head -25 || true
+
+      # -------------------------------------------- Cap. 52: Instruments
+
+      - name: Plantillas de Instruments
+        run: |
+          xcrun xctrace list templates 2>&1 || true
+          echo "--- xctrace record, opciones ---"
+          xcrun xctrace record --help 2>&1 | head -30 || true
+
+      # -------------------------------------------------- Cap. 53: LLDB
+
+      - name: LLDB en modo por lotes
+        run: |
+          lldb --version
+          cat > /tmp/sonda.swift <<'EOF'
+          func promedio(_ xs: [Int]) -> Int {
+              let suma = xs.reduce(0, +)
+              return suma / xs.count
+          }
+          let datos = [12, 24, 36]
+          print("promedio: \(promedio(datos))")
+          let vacio: [Int] = []
+          print("y ahora con lista vacia:")
+          print(promedio(vacio))
+          EOF
+          swiftc -g -Onone /tmp/sonda.swift -o /tmp/sonda
+          echo "--- ejecucion normal ---"
+          /tmp/sonda || echo "(termino con codigo $?)"
+          echo "--- bajo lldb, con backtrace automatico ---"
+          lldb -b -o "run" -o "bt" -o "frame variable" /tmp/sonda 2>&1 | tail -40
+
+      - name: Simbolizar una direccion con atos
+        run: |
+          echo "--- atos existe y esto es su ayuda ---"
+          atos 2>&1 | head -12 || true
+
+      # ------------------------------- Cap. 54: accesibilidad e idiomas
+
+      - name: Idiomas y regiones que entiende el simulador
+        run: |
+          echo "--- plutil sobre los ajustes de idioma de un simulador ---"
+          xcrun simctl list devices available | head -20
+          echo "--- xcodebuild y los idiomas de prueba ---"
+          xcodebuild -help 2>&1 | grep -iE "testLanguage|testRegion|resultBundle" || true
