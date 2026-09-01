@@ -54,7 +54,15 @@ public enum PilaCoreData {
     /// `Failed to find a unique match for an NSEntityDescription`.
     /// Se descubrió al correr las pruebas en paralelo, cada una con su
     /// contenedor.
-    public static let modeloCompartido: NSManagedObjectModel = modelo()
+    ///
+    /// El `nonisolated(unsafe)` tampoco es capricho. Swift 6 rechaza una
+    /// propiedad estática de un tipo que no sea `Sendable`, y
+    /// `NSManagedObjectModel` no lo es porque viene de la época de
+    /// Objective-C. La anotación desactiva esa comprobación y la
+    /// justificación es concreta: este modelo se construye una vez y a partir
+    /// de ahí **solo se lee**; nadie lo muta. Apple documenta que un modelo
+    /// ya usado por un coordinador es inmutable en la práctica.
+    public nonisolated(unsafe) static let modeloCompartido: NSManagedObjectModel = modelo()
 
     /// Un contenedor aislado, con su propio archivo temporal.
     ///
