@@ -33,8 +33,11 @@ func mvvmFiltra() async {
         Issue.record("Se esperaba .listo")
         return
     }
+    // `allSatisfy` es rethrowing, y dentro de `#expect` eso obliga a un `try`
+    // que la prueba no necesita. Se saca fuera y queda más legible.
+    let todasDisponibles = visibles.allSatisfy(\.estaDisponible)
     #expect(visibles.count == 2)
-    #expect(visibles.allSatisfy(\.estaDisponible))
+    #expect(todasDisponibles)
 }
 
 @Test("MVVM: un fallo del repositorio se traduce a un mensaje legible")
@@ -101,8 +104,9 @@ func viperFiltra() async {
         Issue.record("Se esperaba .listo")
         return
     }
+    let ningunaAdoptada = vistas.allSatisfy { $0.insignia == nil }
     #expect(vistas.count == 2)
-    #expect(vistas.allSatisfy { $0.insignia == nil })
+    #expect(ningunaAdoptada)
 }
 
 @Test("VIPER: un fallo del interactor se traduce a un mensaje legible")
