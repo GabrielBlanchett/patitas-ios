@@ -1,0 +1,42 @@
+# Levanta la API y su base de datos:
+#   docker compose up --build
+#   curl http://localhost:8080/mascotas
+#   docker compose down
+#
+# PostgreSQL entra desde ahora aunque la API todavia no lo use: los capitulos
+# de datos lo necesitan y asi hay un solo compose que levantar.
+
+services:
+  api:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_HOST: db
+      DATABASE_NAME: patitas
+      DATABASE_USERNAME: patitas
+      DATABASE_PASSWORD: patitas
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: patitas
+      POSTGRES_PASSWORD: patitas
+      POSTGRES_DB: patitas
+    ports:
+      # Se publica para poder conectarse con un cliente SQL desde Windows
+      # mientras se estudian los capitulos de datos.
+      - "5432:5432"
+    volumes:
+      - datos:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U patitas -d patitas"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  datos:
