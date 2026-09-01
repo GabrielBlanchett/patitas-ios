@@ -1,0 +1,17 @@
+# Los scripts se ejecutan con Git Bash: CRLF rompe el shebang.
+*.sh text eol=lf
+
+# LaTeX y documentacion, siempre LF para que los diffs sean limpios.
+*.tex text eol=lf
+*.md  text eol=lf
+
+# Codigo Swift y configuracion.
+*.swift text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+
+# Binarios: git no los toca.
+*.exe binary
+*.pdf binary
+*.png binary
+*.jpg binary

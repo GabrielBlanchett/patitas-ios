@@ -1,0 +1,20 @@
+.DS_Store
+
+# Artefactos de compilacion
+.build/
+.swiftpm/
+DerivedData/
+build/
+
+# El proyecto de Xcode NO se versiona: lo genera XcodeGen desde project.yml.
+# Un .pbxproj a mano es ilegible y se corrompe en cada merge.
+*.xcodeproj/
+*.xcworkspace/
+xcuserdata/
+
+# Resultados de pruebas y capturas descargadas del CI
+*.xcresult/
+capturas-ci/
+
+# Secretos
+.env
