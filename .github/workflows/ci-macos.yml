@@ -72,7 +72,20 @@ jobs:
             -destination "id=$SIMULADOR" \
             -derivedDataPath build \
             -resultBundlePath TestResults.xcresult \
+            -enableCodeCoverage YES \
             CODE_SIGNING_ALLOWED=NO
+
+      # La cobertura no es un objetivo, es un mapa: dice que NO se probo.
+      # El capitulo 85 explica por que perseguir un porcentaje es mala idea y
+      # que se hace en su lugar con estos numeros.
+      - name: Cobertura
+        working-directory: PatitasiOS
+        run: |
+          echo "=== resumen por objetivo ==="
+          xcrun xccov view --report --only-targets TestResults.xcresult
+          echo "=== por archivo ==="
+          xcrun xccov view --report --files-for-target PatitasiOS.app TestResults.xcresult \
+            | head -30
 
       - name: Capturar la pantalla para el libro
         working-directory: PatitasiOS
