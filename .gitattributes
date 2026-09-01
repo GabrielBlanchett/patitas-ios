@@ -1,6 +1,14 @@
 # Los scripts se ejecutan con Git Bash: CRLF rompe el shebang.
 *.sh text eol=lf
 
+# Todo lo que acaba dentro de un contenedor Linux tiene que ir en LF.
+# Un Dockerfile con CRLF mete un \r al final de cada RUN y rompe la compilacion.
+Dockerfile          text eol=lf
+Dockerfile.*        text eol=lf
+*.dockerfile        text eol=lf
+docker-compose.yaml text eol=lf
+docker-compose.yml  text eol=lf
+
 # LaTeX y documentacion, siempre LF para que los diffs sean limpios.
 *.tex text eol=lf
 *.md  text eol=lf
@@ -9,6 +17,10 @@
 *.swift text eol=lf
 *.yml   text eol=lf
 *.yaml  text eol=lf
+
+# Los .cmd son de Windows: ahi CRLF es lo correcto.
+*.cmd text eol=crlf
+*.bat text eol=crlf
 
 # Binarios: git no los toca.
 *.exe binary
