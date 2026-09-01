@@ -4,9 +4,12 @@
 # un simulador de verdad y se fotografia en varias condiciones. Las imagenes se
 # publican como artefacto y de ahi se descargan para el libro.
 #
-# Las condiciones no son decorativas: claro y oscuro, texto normal y texto
-# accesible. Son las que la definicion de terminado del capitulo 39 exige
-# revisar y las que nadie mira hasta que un usuario se queja.
+# Todas las pantallas salen de la MISMA ejecucion a proposito: arrancar el
+# simulador y compilar es lo caro (unos seis minutos), y cada captura extra
+# cuesta seis segundos. Agrupar es lo que hace que esto sea practico.
+#
+# Que pantalla se abre lo decide el argumento `-demo`, que iOS convierte en una
+# clave de UserDefaults. Los valores validos son los del enum `Demo`.
 
 name: Capturas
 
@@ -62,47 +65,63 @@ jobs:
             --batteryState charged --batteryLevel 100 \
             --cellularMode active --cellularBars 4 \
             --wifiMode active --wifiBars 3
-          xcrun simctl status_bar "$SIMULADOR" list || true
 
-      - name: Captura en claro
+      # ------------------------------------------- Las cuatro condiciones
+
+      - name: Condiciones de la Parte VIII
         working-directory: PatitasiOS
         run: |
+          set -eu
+          APP=mx.gabrielblanchet.patitas
+
+          disparar() {   # $1 archivo, resto: argumentos de lanzamiento
+            local salida="$1"; shift
+            xcrun simctl launch "$SIMULADOR" "$APP" "$@" >/dev/null
+            sleep 5
+            xcrun simctl io "$SIMULADOR" screenshot "capturas/$salida"
+            xcrun simctl terminate "$SIMULADOR" "$APP" >/dev/null 2>&1 || true
+          }
+
           xcrun simctl ui "$SIMULADOR" appearance light
-          xcrun simctl launch "$SIMULADOR" mx.gabrielblanchet.patitas
-          sleep 6
-          xcrun simctl io "$SIMULADOR" screenshot capturas/01-claro.png
-          xcrun simctl terminate "$SIMULADOR" mx.gabrielblanchet.patitas || true
-
-      - name: Captura en oscuro
-        working-directory: PatitasiOS
-        run: |
+          disparar 01-claro.png
           xcrun simctl ui "$SIMULADOR" appearance dark
-          xcrun simctl launch "$SIMULADOR" mx.gabrielblanchet.patitas
-          sleep 6
-          xcrun simctl io "$SIMULADOR" screenshot capturas/02-oscuro.png
-          xcrun simctl terminate "$SIMULADOR" mx.gabrielblanchet.patitas || true
-
-      - name: Captura con texto accesible
-        working-directory: PatitasiOS
-        run: |
+          disparar 02-oscuro.png
           xcrun simctl ui "$SIMULADOR" appearance light
           xcrun simctl ui "$SIMULADOR" content_size accessibility-extra-extra-extra-large
-          xcrun simctl launch "$SIMULADOR" mx.gabrielblanchet.patitas
-          sleep 6
-          xcrun simctl io "$SIMULADOR" screenshot capturas/03-texto-gigante.png
-          xcrun simctl terminate "$SIMULADOR" mx.gabrielblanchet.patitas || true
+          disparar 03-texto-gigante.png
           xcrun simctl ui "$SIMULADOR" content_size medium
+          disparar 04-ingles.png -AppleLanguages "(en)" -AppleLocale "en_US"
 
-      # Sin cambiar el idioma del simulador entero: se le pasa a la app al
-      # lanzarla, que es como se prueba una traduccion sin reiniciar nada.
-      - name: Captura en ingles
+      # ----------------------------------------- Las pantallas de SwiftUI
+
+      - name: Pantallas de la Parte IX
         working-directory: PatitasiOS
         run: |
-          xcrun simctl launch "$SIMULADOR" mx.gabrielblanchet.patitas \
-            -AppleLanguages "(en)" -AppleLocale "en_US"
-          sleep 6
-          xcrun simctl io "$SIMULADOR" screenshot capturas/04-ingles.png
-          xcrun simctl terminate "$SIMULADOR" mx.gabrielblanchet.patitas || true
+          set -eu
+          APP=mx.gabrielblanchet.patitas
+
+          demo() {   # $1 archivo, $2 valor de -demo, resto: extras
+            local salida="$1"; local cual="$2"; shift 2
+            xcrun simctl launch "$SIMULADOR" "$APP" -demo "$cual" "$@" >/dev/null
+            sleep 5
+            xcrun simctl io "$SIMULADOR" screenshot "capturas/$salida"
+            xcrun simctl terminate "$SIMULADOR" "$APP" >/dev/null 2>&1 || true
+          }
+
+          demo 10-layout.png            layout
+          demo 11-estado.png            estado
+          demo 12-listas.png            listas
+          demo 13-formulario.png        formulario
+          demo 14-animacion-antes.png   animacionAntes
+          demo 15-animacion-despues.png animacionDespues
+          demo 16-sistema.png           sistema
+          demo 17-rendimiento.png       rendimiento
+
+          # La pantalla adaptativa, en las dos condiciones que la justifican.
+          demo 18-adaptativo-normal.png adaptativo
+          xcrun simctl ui "$SIMULADOR" content_size accessibility-extra-extra-extra-large
+          demo 19-adaptativo-grande.png adaptativo
+          xcrun simctl ui "$SIMULADOR" content_size medium
 
       - name: Que quedo
         working-directory: PatitasiOS
