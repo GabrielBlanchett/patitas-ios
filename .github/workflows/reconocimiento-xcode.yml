@@ -115,6 +115,42 @@ jobs:
           echo "--- atos existe y esto es su ayuda ---"
           atos 2>&1 | head -12 || true
 
+      # ------------------------------- Cap. 86 a 89: seguridad y produccion
+
+      - name: Que lleva dentro la app compilada
+        working-directory: PatitasiOS
+        run: |
+          xcodebuild build -project PatitasiOS.xcodeproj -scheme PatitasiOS             -destination "generic/platform=iOS Simulator"             -derivedDataPath build CODE_SIGNING_ALLOWED=NO >/dev/null 2>&1 || true
+          APP=$(find build/Build/Products -name "PatitasiOS.app" -maxdepth 3 | head -1)
+          echo "--- firma ---"
+          codesign -dvvv "$APP" 2>&1 | head -12 || true
+          echo "--- permisos declarados (entitlements) ---"
+          codesign -d --entitlements :- "$APP" 2>&1 | head -20 || true
+          echo "--- ATS en el Info.plist ---"
+          plutil -extract NSAppTransportSecurity xml1 -o - "$APP/Info.plist" 2>&1 | head -12 || true
+          echo "--- tamano de la app ---"
+          du -sh "$APP"
+
+      - name: Notificaciones en el simulador
+        run: |
+          echo "--- simctl push ---"
+          xcrun simctl help push 2>&1 | head -20 || true
+          cat > /tmp/aviso.apns <<'JSON'
+          {
+            "Simulator Target Bundle": "mx.gabrielblanchet.patitas",
+            "aps": {
+              "alert": {
+                "title": "Kira te esta esperando",
+                "body": "Tu solicitud de adopcion fue aprobada"
+              },
+              "sound": "default",
+              "badge": 1
+            }
+          }
+          JSON
+          echo "--- el archivo que se envia ---"
+          cat /tmp/aviso.apns
+
       # ------------------------------- Cap. 54: accesibilidad e idiomas
 
       - name: Idiomas y regiones que entiende el simulador
