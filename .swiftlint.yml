@@ -11,11 +11,14 @@
 included:
   - swift-cli/Sources
   - swift-cli/Tests
+  - swift-datos/Sources
+  - swift-datos/Tests
   - PatitasiOS/Sources
   - PatitasiOS/Tests
 
 excluded:
   - swift-cli/.build
+  - swift-datos/.build
   - swift-cli/ejemplos   # ejemplos del libro: varios rompen reglas a proposito
   - lint-demo            # demostracion del cap. 36; tiene su propia config
 

@@ -1,0 +1,40 @@
+# Compila y prueba el paquete de datos locales (GRDB sobre SQLite).
+#
+# Va aparte del workflow de iOS porque no necesita simulador y termina en
+# menos de dos minutos. Y va en macOS y no en Linux por una razon concreta:
+# GRDB trae un enlace simbolico dentro de sus pruebas, y en Windows el
+# checkout falla con "unable to create symlink ... Permission denied", asi que
+# el paquete no se puede verificar en la maquina donde se escribe el libro.
+
+name: Datos
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  grdb:
+    runs-on: macos-26
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Seleccionar Xcode
+        run: sudo xcode-select -s /Applications/Xcode_26.6.app
+
+      - name: Dejar constancia de las versiones
+        run: swift --version
+
+      - name: Compilar
+        working-directory: swift-datos
+        run: swift build
+
+      - name: Que version de GRDB se resolvio
+        working-directory: swift-datos
+        run: swift package show-dependencies --format flatlist
+
+      - name: Probar
+        working-directory: swift-datos
+        run: swift test
