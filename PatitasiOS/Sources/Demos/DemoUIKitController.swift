@@ -1,4 +1,5 @@
 import UIKit
+import Dominio
 
 /// Capítulos 65 a 67: la misma lista, escrita en UIKit.
 ///

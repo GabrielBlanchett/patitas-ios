@@ -1,6 +1,7 @@
 import Foundation
 import Testing
 @testable import PatitasiOS
+import Dominio
 
 /// Las pruebas de las dos arquitecturas, escritas en paralelo a propósito.
 ///

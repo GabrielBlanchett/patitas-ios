@@ -1,4 +1,5 @@
 import SwiftUI
+import Dominio
 
 @main
 struct PatitasApp: App {

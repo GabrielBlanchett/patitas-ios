@@ -13,11 +13,20 @@ options:
     iOS: "18.0"
   createIntermediateGroups: true
 
+# El dominio vive en un paquete local desde el capitulo 80. Se declara aqui y
+# XcodeGen lo agrega al proyecto como dependencia local: no hay repositorio ni
+# version que fijar, y un cambio en el dominio rompe la compilacion al instante.
+packages:
+  Dominio:
+    path: ../Dominio
+
 targets:
   PatitasiOS:
     type: application
     platform: iOS
     sources: [Sources]
+    dependencies:
+      - package: Dominio
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: mx.gabrielblanchet.patitas

@@ -1,4 +1,5 @@
 import SwiftUI
+import Dominio
 
 /// Capítulo 62: la misma pantalla en cualquier condición.
 ///

@@ -1,4 +1,5 @@
 import SwiftUI
+import Dominio
 
 // El mismo catálogo, en VIPER. Cinco piezas con nombre y responsabilidad
 // separadas: View, Interactor, Presenter, Entity y Router.

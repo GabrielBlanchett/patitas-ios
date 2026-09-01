@@ -1,4 +1,5 @@
 import SwiftUI
+import Dominio
 
 /// El modelo observable del capítulo 57.
 ///

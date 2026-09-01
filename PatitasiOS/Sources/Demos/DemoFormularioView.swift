@@ -1,4 +1,5 @@
 import SwiftUI
+import Dominio
 
 /// Capítulo 59: un formulario de solicitud de adopción.
 ///

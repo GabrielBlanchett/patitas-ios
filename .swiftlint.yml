@@ -9,8 +9,9 @@
 
 # Que se revisa.
 included:
+  - Dominio/Sources
+  - Dominio/Tests
   - swift-cli/Sources
-  - swift-cli/Tests
   - swift-datos/Sources
   - swift-datos/Tests
   - PatitasiOS/Sources
@@ -18,6 +19,7 @@ included:
 
 excluded:
   - swift-cli/.build
+  - Dominio/.build
   - swift-datos/.build
   - swift-cli/ejemplos   # ejemplos del libro: varios rompen reglas a proposito
   - lint-demo            # demostracion del cap. 36; tiene su propia config

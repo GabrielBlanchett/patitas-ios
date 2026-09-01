@@ -1,4 +1,5 @@
 import SwiftUI
+import Dominio
 
 /// El sistema de diseño de Patitas, del capítulo 63.
 ///

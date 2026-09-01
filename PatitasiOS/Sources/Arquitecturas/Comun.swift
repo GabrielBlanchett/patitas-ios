@@ -1,4 +1,5 @@
 import Foundation
+import Dominio
 
 /// Lo que comparten las tres versiones de la misma pantalla.
 ///

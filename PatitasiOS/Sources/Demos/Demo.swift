@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import Dominio
 
 /// Qué pantalla se muestra al arrancar.
 ///

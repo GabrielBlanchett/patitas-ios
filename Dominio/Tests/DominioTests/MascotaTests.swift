@@ -1,5 +1,5 @@
 import Testing
-@testable import Refugio
+@testable import Dominio
 
 @Test("Una mascota recién creada está disponible para adopción")
 func mascotaNuevaEstaDisponible() {

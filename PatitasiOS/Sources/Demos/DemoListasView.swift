@@ -1,4 +1,5 @@
 import SwiftUI
+import Dominio
 
 /// Capítulo 58: listas con secciones y navegación con ruta.
 struct DemoListasView: View {

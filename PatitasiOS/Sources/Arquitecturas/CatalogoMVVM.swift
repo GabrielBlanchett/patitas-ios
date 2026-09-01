@@ -1,4 +1,5 @@
 import SwiftUI
+import Dominio
 
 // MARK: - Modelo de vista
 

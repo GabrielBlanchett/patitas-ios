@@ -2,9 +2,13 @@ import Foundation
 
 /// Una mascota del refugio.
 ///
-/// Es el tipo que recorre todo el libro: aparece aquí, en la app de iOS y en la
-/// API. Se define como `struct` a propósito —semántica de valor— y el capítulo
-/// sobre `struct` frente a `class` explica por qué.
+/// Es el tipo que recorre todo el libro: aparece en el ejecutable de consola,
+/// en la app de iOS y en la API. Se define como `struct` a propósito
+/// —semántica de valor— y el capítulo sobre `struct` frente a `class` explica
+/// por qué.
+///
+/// Vive en el paquete `Dominio` desde el capítulo 80. Antes estaba escrito dos
+/// veces, una en cada objetivo.
 public struct Mascota: Identifiable, Hashable, Sendable {
     public let id: UUID
     public let nombre: String
@@ -31,7 +35,7 @@ public struct Mascota: Identifiable, Hashable, Sendable {
     /// Es más código del que parece necesario, y ése es justo el punto: el
     /// singular de «1 mes» y «1 año» es el tipo de detalle que separa una app
     /// que se siente bien hecha de una que no.
-    static func edadEnPalabras(meses: Int) -> String {
+    public static func edadEnPalabras(meses: Int) -> String {
         let años = meses / 12
         let resto = meses % 12
 
@@ -57,7 +61,7 @@ public struct Mascota: Identifiable, Hashable, Sendable {
 }
 
 extension Mascota {
-    /// El refugio que usan los ejemplos del libro, aquí y en la app de iOS.
+    /// El refugio que usan los ejemplos del libro, en la consola y en la app.
     public static let refugioDeEjemplo: [Mascota] = [
         Mascota(nombre: "Kira", edadEnMeses: 14),
         Mascota(nombre: "Balto", edadEnMeses: 1),

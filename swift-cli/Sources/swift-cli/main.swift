@@ -1,4 +1,4 @@
-import Refugio
+import Dominio
 
 print("Refugio Patitas Seguras")
 for mascota in Mascota.refugioDeEjemplo {

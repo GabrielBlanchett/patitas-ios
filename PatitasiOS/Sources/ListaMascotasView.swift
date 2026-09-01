@@ -1,4 +1,5 @@
 import SwiftUI
+import Dominio
 
 /// La pantalla principal: el catálogo del refugio.
 struct ListaMascotasView: View {
