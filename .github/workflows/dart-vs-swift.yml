@@ -1,0 +1,55 @@
+# Corre el mismo programa en Dart y en Swift para que el anexo A1 cite las
+# dos salidas de verdad y no una comparacion escrita de memoria.
+#
+# Es barato: no compila la app de iOS ni levanta simulador. Se lanza a mano.
+
+name: Dart contra Swift
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'dart-comparacion/**'
+      - '.github/workflows/dart-vs-swift.yml'
+
+jobs:
+  comparar:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: '6.1'
+
+      - name: Versiones exactas
+        run: |
+          echo "--- dart ---"
+          dart --version
+          echo "--- swift ---"
+          swift --version
+
+      - name: La salida de Dart
+        working-directory: dart-comparacion
+        run: |
+          dart analyze comparacion.dart || true
+          echo "=================================================="
+          dart run comparacion.dart
+
+      - name: La salida de Swift
+        working-directory: dart-comparacion
+        run: |
+          swiftc -O Comparacion.swift -o comparacion
+          echo "=================================================="
+          ./comparacion
+
+      - name: Cuanto pesa cada quien
+        working-directory: dart-comparacion
+        run: |
+          echo "--- lineas de codigo ---"
+          wc -l comparacion.dart Comparacion.swift
