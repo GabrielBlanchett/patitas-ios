@@ -99,8 +99,16 @@ jobs:
           swiftc -g -Onone /tmp/sonda.swift -o /tmp/sonda
           echo "--- ejecucion normal ---"
           /tmp/sonda || echo "(termino con codigo $?)"
-          echo "--- bajo lldb, con backtrace automatico ---"
-          lldb -b -o "run" -o "bt" -o "frame variable" /tmp/sonda 2>&1 | tail -40
+
+          echo "--- sesion de lldb con punto de interrupcion ---"
+          lldb -b \
+            -o "breakpoint set --name promedio" \
+            -o "run" \
+            -o "frame variable" \
+            -o "p xs.count" \
+            -o "bt" \
+            -o "continue" \
+            /tmp/sonda 2>&1 | head -60
 
       - name: Simbolizar una direccion con atos
         run: |
