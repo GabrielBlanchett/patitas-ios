@@ -1,0 +1,64 @@
+# Configuracion de SwiftLint del proyecto.
+#
+# SwiftLint busca este archivo en el directorio desde el que se ejecuta y va
+# subiendo. Por eso vive en la raiz del repositorio: asi vale igual para
+# `swiftlint` a mano, para Xcode y para el workflow de CI.
+#
+# Regla del equipo: apagar una regla sin escribir el motivo no vale. Si dentro
+# de seis meses nadie sabe por que esta apagada, no se puede volver a encender.
+
+# Que se revisa.
+included:
+  - swift-cli/Sources
+  - swift-cli/Tests
+  - PatitasiOS/Sources
+  - PatitasiOS/Tests
+
+excluded:
+  - swift-cli/.build
+  - swift-cli/ejemplos   # ejemplos del libro: varios rompen reglas a proposito
+  - lint-demo            # demostracion del cap. 36; tiene su propia config
+
+# Reglas que no vienen encendidas de fabrica y aqui si queremos.
+opt_in_rules:
+  - empty_count               # `xs.count == 0` en vez de `xs.isEmpty`
+  - first_where               # `.filter { }.first` en vez de `.first(where:)`
+  - force_unwrapping          # el `!` que tumba la app en produccion
+  - explicit_init             # `.init(...)` redundante
+  - closure_spacing
+  - contains_over_first_not_nil
+  - sorted_first_last         # `.sorted().first` en vez de `.min()`
+
+disabled_rules:
+  # Decidido el 1 de septiembre de 2026. Las comas finales en literales de
+  # varias lineas se quedan: agregar un elemento pasa a ser un diff de una sola
+  # linea en vez de dos, y Swift 6.1 amplio el soporte del lenguaje para ellas.
+  # La regla viene encendida de fabrica y aqui se apaga a proposito.
+  - trailing_comma
+
+  # Los pendientes se rastrean en el gestor de tareas con su numero de ticket,
+  # no como avisos del linter que todo el mundo aprende a ignorar.
+  - todo
+
+# Umbrales. Los de fabrica son sensatos; estos son los acordados aqui.
+line_length:
+  warning: 120
+  error: 200
+  ignores_comments: true
+  ignores_urls: true
+
+identifier_name:
+  min_length:
+    warning: 3
+  excluded: [id, x, y]   # nombres cortos que si se entienden
+
+type_body_length:
+  warning: 250
+  error: 400
+
+function_body_length:
+  warning: 50
+  error: 100
+
+# Formato de la salida. "xcode" es el que entienden Xcode y GitHub Actions.
+reporter: "xcode"

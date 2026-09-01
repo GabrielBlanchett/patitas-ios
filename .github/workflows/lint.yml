@@ -55,7 +55,7 @@ jobs:
 
       # Sin --strict, los avisos no rompen nada y todo el mundo los ignora.
       # Con --strict, un aviso es un error y el PR no se puede fusionar.
+      # Sin ruta: SwiftLint toma el .swiftlint.yml de la raiz y revisa lo que
+      # su bloque `included` enumera.
       - name: Puerta de calidad sobre el codigo real
-        run: |
-          swiftlint lint --strict --no-cache \
-            swift-cli/Sources swift-cli/Tests PatitasiOS/Sources PatitasiOS/Tests
+        run: swiftlint lint --strict --no-cache
