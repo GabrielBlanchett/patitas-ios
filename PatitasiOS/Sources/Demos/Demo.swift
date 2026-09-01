@@ -23,6 +23,8 @@ enum Demo: String, CaseIterable, Sendable {
     case rendimiento
     case uikit
     case interop
+    case mvvm
+    case viper
 
     /// La que pidió el argumento de lanzamiento, o el catálogo si no hay.
     static var seleccionada: Demo {
@@ -63,6 +65,10 @@ struct RaizDemo: View {
             EnvoltorioUIKit().ignoresSafeArea()
         case .interop:
             DemoInteropView()
+        case .mvvm:
+            CatalogoMVVMView()
+        case .viper:
+            CatalogoVIPERView()
         }
     }
 }

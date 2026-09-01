@@ -150,6 +150,8 @@ jobs:
           demo 17-rendimiento.png       rendimiento
 
           demo 20-uikit.png             uikit
+          demo 22-mvvm.png              mvvm
+          demo 23-viper.png             viper
           demo 21-interop.png           interop
 
           # La pantalla adaptativa, en las dos condiciones que la justifican.
