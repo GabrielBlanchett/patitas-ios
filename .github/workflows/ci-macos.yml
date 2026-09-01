@@ -1,0 +1,103 @@
+# Compila, prueba y fotografia la app en un runner macOS de GitHub.
+#
+# Es la unica forma de verificar codigo de iOS sin una Mac. Los runners macOS
+# son gratis e ilimitados en repositorios publicos; en privados cuestan 10x.
+#
+# Todos los valores fijados aqui salieron de preguntarle al runner el
+# 1 de septiembre de 2026, no de suponerlos:
+#   macOS 26.5.2 | Xcode 26.6 (17F113) | Swift 6.3.3 | runtimes de iOS 26.2, 26.4 y 26.5
+
+name: iOS
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-test:
+    runs-on: macos-26
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Seleccionar Xcode
+        run: sudo xcode-select -s /Applications/Xcode_26.6.app
+
+      - name: Dejar constancia de las versiones
+        run: |
+          sw_vers
+          xcodebuild -version
+          swift --version
+
+      # El nombre "iPhone 17" existe en tres runtimes a la vez, asi que usarlo
+      # tal cual seria ambiguo. Se resuelve al UDID del runtime mas nuevo.
+      - name: Elegir simulador
+        run: |
+          UDID=$(xcrun simctl list devices available -j \
+            | jq -r '.devices
+                     | to_entries
+                     | map(select(.key | test("SimRuntime.iOS")))
+                     | sort_by(.key)
+                     | last
+                     | .value[]
+                     | select(.name == "iPhone 17")
+                     | .udid')
+          if [ -z "$UDID" ]; then
+            echo "No hay ningun iPhone 17 disponible. Simuladores presentes:"
+            xcrun simctl list devices available
+            exit 1
+          fi
+          echo "SIMULADOR=$UDID" >> "$GITHUB_ENV"
+          echo "Simulador elegido: $UDID"
+          xcrun simctl list devices available | grep "$UDID"
+
+      - name: Instalar XcodeGen
+        run: brew install xcodegen
+
+      - name: Generar el proyecto de Xcode
+        working-directory: PatitasiOS
+        run: |
+          xcodegen generate
+          ls -la PatitasiOS.xcodeproj
+
+      - name: Compilar y probar
+        working-directory: PatitasiOS
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project PatitasiOS.xcodeproj \
+            -scheme PatitasiOS \
+            -destination "id=$SIMULADOR" \
+            -derivedDataPath build \
+            -resultBundlePath TestResults.xcresult \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Capturar la pantalla para el libro
+        working-directory: PatitasiOS
+        run: |
+          xcrun simctl bootstatus "$SIMULADOR" -b
+          APP=$(find build/Build/Products -name "PatitasiOS.app" -maxdepth 3 | head -1)
+          echo "App encontrada en: $APP"
+          xcrun simctl install "$SIMULADOR" "$APP"
+          xcrun simctl launch "$SIMULADOR" mx.gabrielblanchet.patitas
+          sleep 6
+          mkdir -p capturas
+          xcrun simctl io "$SIMULADOR" screenshot capturas/lista-mascotas.png
+          ls -la capturas
+
+      - name: Publicar la captura
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: capturas-simulador
+          path: PatitasiOS/capturas/*.png
+          if-no-files-found: error
+
+      - name: Publicar el resultado de las pruebas
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: resultado-pruebas
+          path: PatitasiOS/TestResults.xcresult
