@@ -1,0 +1,117 @@
+# Genera las capturas de pantalla del libro en el simulador.
+#
+# Es lo que sustituye a tener una Mac delante: la app se compila, se instala en
+# un simulador de verdad y se fotografia en varias condiciones. Las imagenes se
+# publican como artefacto y de ahi se descargan para el libro.
+#
+# Las condiciones no son decorativas: claro y oscuro, texto normal y texto
+# accesible. Son las que la definicion de terminado del capitulo 39 exige
+# revisar y las que nadie mira hasta que un usuario se queja.
+
+name: Capturas
+
+on:
+  workflow_dispatch:
+
+jobs:
+  capturar:
+    runs-on: macos-26
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Seleccionar Xcode
+        run: sudo xcode-select -s /Applications/Xcode_26.6.app
+
+      - name: Elegir simulador
+        run: |
+          UDID=$(xcrun simctl list devices available -j \
+            | jq -r '.devices | to_entries
+                     | map(select(.key | test("SimRuntime.iOS")))
+                     | sort_by(.key) | last
+                     | .value[] | select(.name == "iPhone 17") | .udid')
+          if [ -z "$UDID" ]; then echo "No hay iPhone 17"; exit 1; fi
+          echo "SIMULADOR=$UDID" >> "$GITHUB_ENV"
+
+      - name: Generar y compilar
+        working-directory: PatitasiOS
+        run: |
+          brew install xcodegen >/dev/null
+          xcodegen generate
+          set -o pipefail
+          xcodebuild build \
+            -project PatitasiOS.xcodeproj -scheme PatitasiOS \
+            -destination "id=$SIMULADOR" -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Arrancar e instalar
+        working-directory: PatitasiOS
+        run: |
+          xcrun simctl bootstatus "$SIMULADOR" -b
+          APP=$(find build/Build/Products -name "PatitasiOS.app" -maxdepth 3 | head -1)
+          xcrun simctl install "$SIMULADOR" "$APP"
+          mkdir -p capturas
+
+      # La barra de estado real trae la hora del runner y la bateria a medias.
+      # Fijarla es lo que hace que dos capturas se puedan comparar, y es lo que
+      # Apple exige para las imagenes de la ficha del App Store.
+      - name: Fijar la barra de estado
+        run: |
+          xcrun simctl status_bar "$SIMULADOR" override \
+            --time "9:41" \
+            --batteryState charged --batteryLevel 100 \
+            --cellularMode active --cellularBars 4 \
+            --wifiMode active --wifiBars 3
+          xcrun simctl status_bar "$SIMULADOR" list || true
+
+      - name: Captura en claro
+        working-directory: PatitasiOS
+        run: |
+          xcrun simctl ui "$SIMULADOR" appearance light
+          xcrun simctl launch "$SIMULADOR" mx.gabrielblanchet.patitas
+          sleep 6
+          xcrun simctl io "$SIMULADOR" screenshot capturas/01-claro.png
+          xcrun simctl terminate "$SIMULADOR" mx.gabrielblanchet.patitas || true
+
+      - name: Captura en oscuro
+        working-directory: PatitasiOS
+        run: |
+          xcrun simctl ui "$SIMULADOR" appearance dark
+          xcrun simctl launch "$SIMULADOR" mx.gabrielblanchet.patitas
+          sleep 6
+          xcrun simctl io "$SIMULADOR" screenshot capturas/02-oscuro.png
+          xcrun simctl terminate "$SIMULADOR" mx.gabrielblanchet.patitas || true
+
+      - name: Captura con texto accesible
+        working-directory: PatitasiOS
+        run: |
+          xcrun simctl ui "$SIMULADOR" appearance light
+          xcrun simctl ui "$SIMULADOR" content_size accessibility-extra-extra-extra-large
+          xcrun simctl launch "$SIMULADOR" mx.gabrielblanchet.patitas
+          sleep 6
+          xcrun simctl io "$SIMULADOR" screenshot capturas/03-texto-gigante.png
+          xcrun simctl terminate "$SIMULADOR" mx.gabrielblanchet.patitas || true
+          xcrun simctl ui "$SIMULADOR" content_size medium
+
+      # Sin cambiar el idioma del simulador entero: se le pasa a la app al
+      # lanzarla, que es como se prueba una traduccion sin reiniciar nada.
+      - name: Captura en ingles
+        working-directory: PatitasiOS
+        run: |
+          xcrun simctl launch "$SIMULADOR" mx.gabrielblanchet.patitas \
+            -AppleLanguages "(en)" -AppleLocale "en_US"
+          sleep 6
+          xcrun simctl io "$SIMULADOR" screenshot capturas/04-ingles.png
+          xcrun simctl terminate "$SIMULADOR" mx.gabrielblanchet.patitas || true
+
+      - name: Que quedo
+        working-directory: PatitasiOS
+        run: ls -la capturas
+
+      - name: Publicar las capturas
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: capturas-libro
+          path: PatitasiOS/capturas/*.png
+          if-no-files-found: error
