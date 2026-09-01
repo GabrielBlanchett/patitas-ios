@@ -45,14 +45,33 @@ public enum PilaCoreData {
         return modelo
     }
 
-    /// Un contenedor en memoria: no toca el disco y muere con la prueba.
-    /// En la app de verdad se quita la línea de `/dev/null` y Core Data
-    /// escribe en un SQLite dentro del contenedor de la app.
-    public static func contenedorEnMemoria() throws -> NSPersistentContainer {
-        let contenedor = NSPersistentContainer(name: "Patitas", managedObjectModel: modelo())
-        let descripcion = NSPersistentStoreDescription()
+    /// **Una sola instancia del modelo para todo el proceso.**
+    ///
+    /// Esto no es una optimización: es obligatorio. Core Data resuelve
+    /// `MascotaCD(context:)` buscando qué entidad corresponde a la clase, y si
+    /// hay dos modelos cargados que declaran `MascotaCD`, la búsqueda es
+    /// ambigua y falla en tiempo de ejecución con
+    /// `Failed to find a unique match for an NSEntityDescription`.
+    /// Se descubrió al correr las pruebas en paralelo, cada una con su
+    /// contenedor.
+    public static let modeloCompartido: NSManagedObjectModel = modelo()
+
+    /// Un contenedor aislado, con su propio archivo temporal.
+    ///
+    /// Cada llamada crea un archivo distinto a propósito: las pruebas de
+    /// Swift Testing corren en paralelo y dos contenedores sobre el mismo
+    /// archivo se estorban. En la app de verdad hay un solo contenedor y su
+    /// URL es la de siempre, dentro del contenedor de la app.
+    public static func contenedorAislado() throws -> NSPersistentContainer {
+        let contenedor = NSPersistentContainer(
+            name: "Patitas",
+            managedObjectModel: modeloCompartido
+        )
+        let url = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("patitas-\(UUID().uuidString).sqlite")
+
+        let descripcion = NSPersistentStoreDescription(url: url)
         descripcion.type = NSSQLiteStoreType
-        descripcion.url = URL(fileURLWithPath: "/dev/null")
         contenedor.persistentStoreDescriptions = [descripcion]
 
         var errorAlCargar: Error?

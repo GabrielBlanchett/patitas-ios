@@ -6,9 +6,9 @@ import Testing
 
 // MARK: - Core Data
 
-@Test("Core Data guarda y recupera con un contenedor en memoria")
+@Test("Core Data guarda y recupera con un contenedor aislado")
 func coreDataGuardaYRecupera() throws {
-    let contenedor = try PilaCoreData.contenedorEnMemoria()
+    let contenedor = try PilaCoreData.contenedorAislado()
     let contexto = contenedor.viewContext
 
     let kira = MascotaCD(context: contexto)
@@ -28,7 +28,7 @@ func coreDataGuardaYRecupera() throws {
 
 @Test("Core Data no guarda nada hasta que se llama a save")
 func coreDataNecesitaSave() throws {
-    let contenedor = try PilaCoreData.contenedorEnMemoria()
+    let contenedor = try PilaCoreData.contenedorAislado()
     let contexto = contenedor.viewContext
 
     let balto = MascotaCD(context: contexto)
@@ -49,7 +49,7 @@ func coreDataNecesitaSave() throws {
 
 @Test("Un predicado de Core Data filtra en el almacen, no en memoria")
 func coreDataFiltraConPredicado() throws {
-    let contenedor = try PilaCoreData.contenedorEnMemoria()
+    let contenedor = try PilaCoreData.contenedorAislado()
     let contexto = contenedor.viewContext
 
     for (nombre, meses, adoptada) in [("Kira", 14, false), ("Balto", 1, false), ("Nube", 36, true)] {
