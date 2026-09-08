@@ -1,0 +1,40 @@
+# Ejecuta el ejemplo de Combine del capitulo 105 en un runner macOS.
+#
+# Combine es cerrado y solo existe en plataformas de Apple: no compila en
+# Windows ni en Linux, asi que esta es la unica forma de que la salida que
+# cita el libro sea real y no inventada.
+#
+# No hace falta simulador: es un ejecutable de linea de comandos, asi que
+# la ejecucion completa tarda un par de minutos.
+
+name: Combine
+
+on:
+  push:
+    paths:
+      - 'swift-cli/ejemplos/combine-demo.swift'
+      - '.github/workflows/combine.yml'
+  workflow_dispatch:
+
+jobs:
+  combine:
+    runs-on: macos-26
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Seleccionar Xcode
+        run: sudo xcode-select -s /Applications/Xcode_26.6.app
+
+      - name: Dejar constancia de las versiones
+        run: |
+          sw_vers
+          swift --version
+
+      - name: Compilar el ejemplo
+        working-directory: swift-cli/ejemplos
+        run: swiftc -swift-version 6 combine-demo.swift -o combine-demo
+
+      - name: Ejecutarlo
+        working-directory: swift-cli/ejemplos
+        run: ./combine-demo
