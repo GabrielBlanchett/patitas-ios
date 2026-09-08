@@ -1,0 +1,85 @@
+# Recoge los hechos reales de macOS que cita la parte XVI del libro:
+# sistema de archivos, permisos, procesos, puertos, simulador y Homebrew.
+#
+# Existe por la misma razon que el workflow de Combine: para que lo que el
+# libro afirma sobre macOS salga de ejecutarlo en macOS, no de recordarlo.
+#
+# No compila nada: son comandos de diagnostico, asi que tarda poco.
+
+name: Terminal macOS
+
+on:
+  push:
+    paths:
+      - '.github/workflows/terminal-macos.yml'
+  workflow_dispatch:
+
+jobs:
+  terminal:
+    runs-on: macos-26
+
+    steps:
+      - name: Version del sistema
+        run: |
+          sw_vers
+          uname -a
+          echo "--- shell por omision ---"
+          dscl . -read /Users/$(whoami) UserShell || echo "$SHELL"
+
+      - name: El sistema de archivos
+        run: |
+          echo "--- la raiz ---"
+          ls -1 /
+          echo "--- el home ---"
+          ls -1 ~
+          echo "--- ~/Library, las que importan ---"
+          ls -1 ~/Library | head -20
+
+      - name: Un bundle es una carpeta
+        run: |
+          echo "--- Safari.app por dentro ---"
+          ls -1 /Applications/Safari.app/Contents 2>/dev/null || \
+            ls -1 /System/Applications/Safari.app/Contents
+          echo "--- y su Info.plist ---"
+          plutil -p /System/Applications/Safari.app/Contents/Info.plist 2>/dev/null \
+            | head -6 || true
+
+      - name: Permisos
+        run: |
+          cd "$(mktemp -d)"
+          echo 'echo hola' > guion.sh
+          echo "--- recien creado ---"
+          ls -l guion.sh
+          echo "--- intentar ejecutarlo ---"
+          ./guion.sh || echo "codigo de salida: $?"
+          echo "--- tras chmod +x ---"
+          chmod +x guion.sh
+          ls -l guion.sh
+          ./guion.sh
+
+      - name: Procesos y puertos
+        run: |
+          echo "--- cuantos procesos hay ---"
+          ps ax | wc -l
+          echo "--- los cinco que mas CPU usan ---"
+          ps ax -o pid,%cpu,%mem,comm | sort -k2 -rn | head -6
+          echo "--- puertos a la escucha ---"
+          lsof -iTCP -sTCP:LISTEN -P -n 2>/dev/null | head -8 || echo "(ninguno)"
+
+      - name: Xcode y el simulador
+        run: |
+          echo "--- que Xcode esta activo ---"
+          xcode-select -p
+          xcodebuild -version
+          echo "--- runtimes disponibles ---"
+          xcrun simctl list runtimes | head -8
+          echo "--- donde vive un simulador ---"
+          ls -d ~/Library/Developer/CoreSimulator/Devices | head -1
+
+      - name: Homebrew
+        run: |
+          brew --version
+          echo "--- donde instala ---"
+          brew --prefix
+          echo "--- cuantas formulas trae el runner ---"
+          brew list --formula | wc -l
