@@ -1,0 +1,186 @@
+# Recoge en un runner macOS los hechos que afirman los capitulos 122, 123 y
+# 127, y que no se pueden comprobar desde Windows porque necesitan Xcode o
+# frameworks de Apple.
+#
+# Existe por la misma razon que combine.yml y terminal-macos.yml: para que lo
+# que el libro imprime en una caja de "Resultado esperado" salga de haberlo
+# ejecutado, no de recordarlo.
+#
+#   cap. 122  xcconfig, herencia de ajustes y xcodebuild -showBuildSettings
+#   cap. 123  OSLog: niveles, privacidad de los interpolados y log show
+#   cap. 127  Vision: reconocimiento de texto real sobre una imagen generada
+#
+# No usa simulador: todo es de linea de comandos, asi que tarda pocos minutos.
+
+name: Entrega 4 en macOS
+
+on:
+  push:
+    paths:
+      - '.github/workflows/entrega4-macos.yml'
+  workflow_dispatch:
+
+jobs:
+  entrega4:
+    runs-on: macos-26
+
+    steps:
+      - name: Dejar constancia de las versiones
+        run: |
+          sw_vers
+          xcodebuild -version
+          swift --version
+
+      # ----------------------------------------------------------
+      # Capitulo 122: build settings y xcconfig
+      # ----------------------------------------------------------
+      - name: 'Cap. 122 - montar un proyecto minimo con xcconfig'
+        run: |
+          mkdir -p /tmp/cfg && cd /tmp/cfg
+
+          cat > Base.xcconfig <<'EOF'
+          PRODUCT_NAME = Adopcion
+          IPHONEOS_DEPLOYMENT_TARGET = 17.0
+          SWIFT_VERSION = 6.0
+          EOF
+
+          cat > Dev.xcconfig <<'EOF'
+          #include "Base.xcconfig"
+          PRODUCT_BUNDLE_IDENTIFIER = mx.gabrielblanchet.adopcion.dev
+          PRODUCT_NAME = Adopcion DEV
+          API_BASE_URL = https:/$()/api-dev.adopta.mx
+          API_ROTA = https://api-dev.adopta.mx
+          EOF
+
+          echo "--- Dev.xcconfig, tal como se escribe ---"
+          cat Dev.xcconfig
+
+      - name: 'Cap. 122 - que valor llega de verdad (la barra doble)'
+        run: |
+          cd /tmp/cfg
+          # Un paquete SPM basta para que xcodebuild resuelva el xcconfig.
+          mkdir -p Fuente/Sources/Fuente
+          cd Fuente
+          cat > Package.swift <<'EOF'
+          // swift-tools-version: 6.0
+          import PackageDescription
+          let package = Package(name: "Fuente",
+                                targets: [.target(name: "Fuente")])
+          EOF
+          echo 'public let hola = "hola"' > Sources/Fuente/Fuente.swift
+
+          echo "--- Valores finales, ya resuelta la herencia ---"
+          xcodebuild -showBuildSettings -xcconfig ../Dev.xcconfig 2>/dev/null \
+            | grep -E "PRODUCT_NAME|BUNDLE_IDENTIFIER|DEPLOYMENT_TARGET|API_" \
+            | sed 's/^ *//' || true
+          echo ""
+          echo "Fijate en API_ROTA: las dos barras empiezan un comentario y"
+          echo "se comen el resto de la linea. API_BASE_URL usa el truco de \$()."
+
+      - name: 'Cap. 122 - listar schemes de un proyecto ajeno'
+        run: |
+          cd /tmp/cfg/Fuente
+          echo "--- xcodebuild -list ---"
+          xcodebuild -list 2>&1 | head -20
+
+      # ----------------------------------------------------------
+      # Capitulo 123: OSLog
+      # ----------------------------------------------------------
+      - name: 'Cap. 123 - escribir y leer el registro del sistema'
+        run: |
+          mkdir -p /tmp/oslog && cd /tmp/oslog
+          cat > registro.swift <<'EOF'
+          import OSLog
+          import Foundation
+
+          let log = Logger(subsystem: "mx.gabrielblanchet.libro", category: "demo")
+
+          let correo = "gabriel@ejemplo.mx"
+          let cuantas = 42
+
+          // Un interpolado de texto es PRIVADO por defecto: al leer el registro
+          // desde fuera aparece como <private>, no el valor.
+          log.notice("sesion iniciada para \(correo)")
+          // Marcado publico a proposito.
+          log.notice("sesion iniciada para \(correo, privacy: .public)")
+          // Los numeros son publicos por defecto.
+          log.notice("mascotas cargadas: \(cuantas)")
+          log.error("fallo de red, codigo \(503)")
+
+          // Leer el propio registro desde el proceso: el boton de diagnostico.
+          let store = try OSLogStore(scope: .currentProcessIdentifier)
+          let desde = store.position(date: Date().addingTimeInterval(-60))
+          let lineas = try store.getEntries(at: desde)
+              .compactMap { $0 as? OSLogEntryLog }
+              .filter { $0.subsystem == "mx.gabrielblanchet.libro" }
+              .map { "[\($0.category)] \($0.level.rawValue) \($0.composedMessage)" }
+
+          print("--- lo que la propia app lee de su registro ---")
+          lineas.forEach { print("  " + $0) }
+          print("  total de entradas propias: \(lineas.count)")
+          EOF
+          swiftc -O registro.swift -o registro
+          ./registro
+
+      - name: 'Cap. 123 - lo mismo visto desde fuera, con log show'
+        run: |
+          echo "--- log show, filtrando por subsistema ---"
+          log show --last 3m --predicate 'subsystem == "mx.gabrielblanchet.libro"' \
+                   --style compact --info 2>/dev/null | head -20 || \
+            echo "(el runner puede no exponer el almacen del sistema)"
+
+      # ----------------------------------------------------------
+      # Capitulo 127: Vision
+      # ----------------------------------------------------------
+      - name: 'Cap. 127 - Vision leyendo texto de una imagen'
+        run: |
+          mkdir -p /tmp/vision && cd /tmp/vision
+          cat > ocr.swift <<'EOF'
+          import AppKit
+          import Vision
+          import Foundation
+
+          // 1. Generamos una imagen con texto, para no depender de ningun archivo.
+          let tam = NSSize(width: 900, height: 320)
+          let imagen = NSImage(size: tam)
+          imagen.lockFocus()
+          NSColor.white.setFill()
+          NSRect(origin: .zero, size: tam).fill()
+          let lineas = ["CARTILLA DE VACUNACION",
+                        "Nombre: Canela",
+                        "Rabia: 14/03/2026",
+                        "Refugio Patitas, CDMX"]
+          for (i, texto) in lineas.enumerated() {
+              let atributos: [NSAttributedString.Key: Any] = [
+                  .font: NSFont.systemFont(ofSize: 42),
+                  .foregroundColor: NSColor.black,
+              ]
+              texto.draw(at: NSPoint(x: 40, y: tam.height - 70 - CGFloat(i) * 62),
+                         withAttributes: atributos)
+          }
+          imagen.unlockFocus()
+
+          guard let tiff = imagen.tiffRepresentation,
+                let rep = NSBitmapImageRep(data: tiff),
+                let cg = rep.cgImage else { fatalError("no se pudo generar") }
+
+          // 2. Y se la damos a Vision, tal cual lo hace el capitulo.
+          let peticion = VNRecognizeTextRequest()
+          peticion.recognitionLevel = .accurate
+          peticion.recognitionLanguages = ["es-MX", "en-US"]
+          peticion.usesLanguageCorrection = true
+
+          let inicio = Date()
+          try VNImageRequestHandler(cgImage: cg, options: [:]).perform([peticion])
+          let ms = Date().timeIntervalSince(inicio) * 1000
+
+          print("--- lo que Vision leyo, sin modelo, sin red, sin dependencias ---")
+          for obs in peticion.results ?? [] {
+              guard let mejor = obs.topCandidates(1).first else { continue }
+              print(String(format: "  %.2f  %@", mejor.confidence, mejor.string))
+          }
+          print(String(format: "  (%d lineas escritas, %d leidas, en %.0f ms)",
+                       lineas.count, (peticion.results ?? []).count, ms))
+          EOF
+          swiftc -O ocr.swift -o ocr
+          ./ocr
